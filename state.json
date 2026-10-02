@@ -1,0 +1,14 @@
+{
+  "items": {
+    "plushie": {
+      "json": false,
+      "form": false,
+      "open": false
+    },
+    "stickers": {
+      "json": false,
+      "form": false,
+      "open": false
+    }
+  }
+}

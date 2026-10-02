@@ -1,0 +1,46 @@
+name: swag-watch
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: "Only verify token and channel access (posts nothing)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swag-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SLACK_NOTIFY_CH: ${{ secrets.SLACK_NOTIFY_CH }}
+      SLACK_PLUSHIE_CH: ${{ secrets.SLACK_PLUSHIE_CH }}
+      SLACK_MENTIONS: ${{ secrets.SLACK_MENTIONS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe
+        if: github.event_name == 'workflow_dispatch' && inputs.probe
+        run: python3 watch.py --probe
+      - name: Check
+        if: github.event_name != 'workflow_dispatch' || !inputs.probe
+        run: python3 watch.py
+      - name: Commit state if changed
+        if: github.event_name != 'workflow_dispatch' || !inputs.probe
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "state: $(date -u +%FT%TZ)"
+            git push
+          fi
