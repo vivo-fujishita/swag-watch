@@ -105,10 +105,20 @@ def probe():
     auth = slack("auth.test", {})
     print("auth.test:", auth.get("ok"), auth.get("error", ""), auth.get("user", ""))
     good = auth.get("ok", False)
+    # Scheduling a message far in the future and deleting it right away proves chat:write
+    # access to the channel without posting. If the delete fails we say so, because the
+    # placeholder would otherwise surface in 30 days.
     for label, ch in (("notify", NOTIFY_CH), ("plushie", PLUSHIE_CH)):
-        r = slack("chat.scheduleMessage", {"channel": ch, "text": "probe", "post_at": int(time.time()) + 86400 * 30})
+        r = slack("chat.scheduleMessage", {
+            "channel": ch,
+            "text": "（swag-watch の疎通確認です。表示されたら無視してください）",
+            "post_at": int(time.time()) + 86400 * 30,
+        })
         if r.get("ok"):
-            slack("chat.deleteScheduledMessage", {"channel": r["channel"], "scheduled_message_id": r["scheduled_message_id"]})
+            d = slack("chat.deleteScheduledMessage", {"channel": r["channel"], "scheduled_message_id": r["scheduled_message_id"]})
+            if not d.get("ok"):
+                print(f"WARNING: could not delete probe in {label} channel: {d.get('error', '')}", flush=True)
+                good = False
         else:
             good = good and label != "notify"  # plushie channel falls back to notify
         print(f"{label} channel can post:", r.get("ok"), r.get("error", ""))

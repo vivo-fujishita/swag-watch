@@ -21,18 +21,25 @@ jobs:
   watch:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-      SLACK_NOTIFY_CH: ${{ secrets.SLACK_NOTIFY_CH }}
-      SLACK_PLUSHIE_CH: ${{ secrets.SLACK_PLUSHIE_CH }}
-      SLACK_MENTIONS: ${{ secrets.SLACK_MENTIONS }}
     steps:
-      - uses: actions/checkout@v4
+      # Pinned to the v4 tag's commit so a moved tag cannot swap the action under us.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # Secrets are exposed only to the two steps that talk to Slack, not to checkout.
       - name: Probe
         if: github.event_name == 'workflow_dispatch' && inputs.probe
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_NOTIFY_CH: ${{ secrets.SLACK_NOTIFY_CH }}
+          SLACK_PLUSHIE_CH: ${{ secrets.SLACK_PLUSHIE_CH }}
+          SLACK_MENTIONS: ${{ secrets.SLACK_MENTIONS }}
         run: python3 watch.py --probe
       - name: Check
         if: github.event_name != 'workflow_dispatch' || !inputs.probe
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_NOTIFY_CH: ${{ secrets.SLACK_NOTIFY_CH }}
+          SLACK_PLUSHIE_CH: ${{ secrets.SLACK_PLUSHIE_CH }}
+          SLACK_MENTIONS: ${{ secrets.SLACK_MENTIONS }}
         run: python3 watch.py
       - name: Commit state if changed
         if: github.event_name != 'workflow_dispatch' || !inputs.probe
