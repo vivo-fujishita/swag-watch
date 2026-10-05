@@ -7,8 +7,8 @@
     },
     "stickers": {
       "json": false,
-      "form": false,
-      "open": false
+      "form": true,
+      "open": true
     }
   }
 }
